@@ -15,18 +15,29 @@
   },
   "author": "binlf <0xbin>",
   "license": "MIT",
-  "module": "src/index.ts",
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/fs-extra": "^11.0.4"
+    "@types/fs-extra": "^11.0.4",
+    "bunchee": "^6.5.2"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "bunchee": "^6.5.2",
     "fs-extra": "^11.3.0",
     "picocolors": "^1.1.1"
+  },
+  "scripts": {
+    "build": "bunchee"
+  },
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.mjs",
+  "exports": {
+    "types": "./dist/index.d.ts",
+    "import": "./dist/index.mjs",
+    "require": "./dist/index.cjs"
   }
 }
