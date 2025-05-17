@@ -1,0 +1,32 @@
+{
+  "name": "rwfs",
+  "version": "0.1.0",
+  "description": "🔄Re:WriteFileSync",
+  "keywords": [
+    "file",
+    "fs",
+    "file-system",
+    "write",
+    "rewrite"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/binlf/rwfs"
+  },
+  "author": "binlf <0xbin>",
+  "license": "MIT",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/fs-extra": "^11.0.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "bunchee": "^6.5.2",
+    "fs-extra": "^11.3.0",
+    "picocolors": "^1.1.1"
+  }
+}
