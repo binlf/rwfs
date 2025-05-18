@@ -19,7 +19,8 @@
   "devDependencies": {
     "@types/bun": "latest",
     "@types/fs-extra": "^11.0.4",
-    "bunchee": "^6.5.2"
+    "bunchee": "^6.5.2",
+    "bunup": "^0.7.0"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -29,7 +30,7 @@
     "picocolors": "^1.1.1"
   },
   "scripts": {
-    "build": "bunchee"
+    "build": "bunup"
   },
   "files": [
     "dist"
