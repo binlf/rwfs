@@ -1,6 +1,8 @@
 {
   "name": "rwfs",
-  "version": "0.1.0",
+  "type": "module",
+  "module": "./dist/index.js",
+  "version": "0.1.1",
   "description": "🔄Re:WriteFileSync",
   "keywords": [
     "file",
@@ -15,29 +17,31 @@
   },
   "author": "binlf <0xbin>",
   "license": "MIT",
-  "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
     "@types/fs-extra": "^11.0.4",
-    "bunchee": "^6.5.2"
+    "tsdown": "^0.12.3"
   },
   "peerDependencies": {
-    "typescript": "^5.0.0"
+    "typescript": "^5"
   },
   "dependencies": {
     "fs-extra": "^11.3.0",
     "picocolors": "^1.1.1"
   },
   "scripts": {
-    "build": "bunchee"
+    "build": "tsdown"
+  },
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
   },
   "files": [
-    "dist"
-  ],
-  "main": "./dist/index.mjs",
-  "exports": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.mjs",
-    "require": "./dist/index.cjs"
-  }
+    "dist/"
+  ]
 }
