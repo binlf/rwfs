@@ -1,9 +1,10 @@
-import { readFileSync, writeFileSync } from "fs-extra";
+import { readFileSync, writeFileSync } from "fs";
 import type { ReWriteFileSyncOptions, UpdateResult } from "./types";
 import { bgWhiteBright, grayBold, whiteBold } from "./logger";
 import pc from "picocolors";
 import { replaceAll } from "./utils";
 
+// todo: path input should also accept an array of paths
 export function reWriteFileSync(
   path: string,
   options: ReWriteFileSyncOptions
@@ -19,6 +20,8 @@ export function reWriteFileSync(
     false;
 
   // DEBUG MODE
+  //todo: clamp/truncate debug mode output(`debugOutputLimit`) -- if it's a massive file, the chunks printed can overflow/overwhelm the terminal UI
+  // todo: have a default clamp value set but also allow the user to pass in a custom number value -- this would potentially allow the user to precisely specify the range of chunks they want to see
   if (shouldPrintChunks) {
     console.log(
       bgWhiteBright(pc.blackBright("------ RWFS: DEBUG MODE ------"))
@@ -49,6 +52,7 @@ export function reWriteFileSync(
   }
 
   // create context for each chunk
+  // todo: context should include chunk `index` -- might want to use that for custom position bound logic
   const createContext = (
     idx: number
   ): { chunk: string; prevChunk?: string; nextChunk?: string } => ({

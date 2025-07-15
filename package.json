@@ -19,14 +19,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",
-    "@types/fs-extra": "^11.0.4",
     "tsdown": "^0.12.3"
   },
   "peerDependencies": {
     "typescript": "^5"
   },
   "dependencies": {
-    "fs-extra": "^11.3.0",
     "picocolors": "^1.1.1"
   },
   "scripts": {
