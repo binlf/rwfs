@@ -20,7 +20,7 @@ export function reWriteFileSync(
     false;
 
   // DEBUG MODE
-  //todo: clamp/truncate debug mode output(`debugOutputLimit`) -- if it's a massive file, the chunks printed can overflow/overwhelm the terminal UI
+  // todo: clamp/truncate debug-mode output(`debugOutputLimit`) -- if it's a massive file, the chunks printed can overflow/overwhelm the terminal UI
   // todo: have a default clamp value set but also allow the user to pass in a custom number value -- this would potentially allow the user to precisely specify the range of chunks they want to see
   if (shouldPrintChunks) {
     console.log(
@@ -52,11 +52,16 @@ export function reWriteFileSync(
   }
 
   // create context for each chunk
-  // todo: context should include chunk `index` -- might want to use that for custom position bound logic
   const createContext = (
     idx: number
-  ): { chunk: string; prevChunk?: string; nextChunk?: string } => ({
+  ): {
+    chunk: string;
+    prevChunk?: string;
+    nextChunk?: string;
+    index: number;
+  } => ({
     chunk: chunks[idx] as string,
+    index: idx,
     prevChunk: idx > 0 ? chunks[idx - 1] : undefined,
     nextChunk: idx < chunks.length - 1 ? chunks[idx + 1] : undefined,
   });
