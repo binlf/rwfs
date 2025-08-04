@@ -12,7 +12,7 @@ export function reWriteFileSync(
   const encoding: BufferEncoding = options.encoding || "utf8";
   const separator: string = options.separator || "\n";
   const removeEmpty = options.removeEmpty || false;
-  const debugOutputLimit = options.debugOutputLimit || 10; // Default limit of 10 chunks
+  const debugOutputLimit = options.debugOutputLimit || 10;
   const fileContent = readFileSync(path, { encoding });
   const chunks = fileContent.split(separator);
   const shouldPrintChunks = options.debug;
