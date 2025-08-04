@@ -17,6 +17,7 @@ type FileRewriteCommonOptions = {
   encoding?: BufferEncoding;
   removeEmpty?: boolean;
   debug?: boolean;
+  debugOutputLimit?: number;
 };
 
 export type ReWriteFileSyncOptionsSingle = {

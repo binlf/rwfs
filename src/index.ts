@@ -12,6 +12,7 @@ export function reWriteFileSync(
   const encoding: BufferEncoding = options.encoding || "utf8";
   const separator: string = options.separator || "\n";
   const removeEmpty = options.removeEmpty || false;
+  const debugOutputLimit = options.debugOutputLimit || 10; // Default limit of 10 chunks
   const fileContent = readFileSync(path, { encoding });
   const chunks = fileContent.split(separator);
   const shouldPrintChunks = options.debug;
@@ -20,8 +21,8 @@ export function reWriteFileSync(
     false;
 
   // DEBUG MODE
-  // todo: clamp/truncate debug-mode output(`debugOutputLimit`) -- if it's a massive file, the chunks printed can overflow/overwhelm the terminal UI
-  // todo: have a default clamp value set but also allow the user to pass in a custom number value -- this would potentially allow the user to precisely specify the range of chunks they want to see
+  // Debug output limit: clamp/truncate debug-mode output to prevent overwhelming the terminal UI
+  // Default limit is 10 chunks, but users can specify a custom number value
   if (shouldPrintChunks) {
     console.log(
       bgWhiteBright(pc.blackBright("------ RWFS: DEBUG MODE ------"))
@@ -30,8 +31,37 @@ export function reWriteFileSync(
       pc.gray("Chunks Size: "),
       pc.bold(pc.whiteBright(chunks.length))
     );
-    console.log(pc.gray("Separator: "), pc.bold(pc.redBright(separator)));
-    chunks.forEach((chunk, index) => {
+    // Show separator as a visible escape sequence if it's a control character
+    const visibleSeparator =
+      separator === "\n"
+        ? "\\n"
+        : separator === "\r"
+        ? "\\r"
+        : separator === "\t"
+        ? "\\t"
+        : JSON.stringify(separator);
+    console.log(
+      pc.gray("Separator: "),
+      pc.bold(`${pc.redBright(visibleSeparator)}(Omitted in output)`)
+    );
+
+    const totalChunks = chunks.length;
+    const shouldClamp = totalChunks > debugOutputLimit;
+    const chunksToShow = shouldClamp
+      ? chunks.slice(0, debugOutputLimit)
+      : chunks;
+
+    if (shouldClamp) {
+      console.log(
+        pc.yellow(
+          `⚠️  Output limited to first ${debugOutputLimit} chunks (${
+            totalChunks - debugOutputLimit
+          } more chunks not shown)`
+        )
+      );
+    }
+
+    chunksToShow.forEach((chunk, index) => {
       const chunkNumber = index + 1;
       const header = `--- Chunk ${chunkNumber} ---`;
       const footer = `--- End Chunk ${chunkNumber} ---`;
@@ -49,6 +79,12 @@ export function reWriteFileSync(
           "\n\n"
       );
     });
+
+    if (shouldClamp) {
+      console.log(
+        pc.yellow(`... and ${totalChunks - debugOutputLimit} more chunks`)
+      );
+    }
   }
 
   // create context for each chunk
