@@ -134,7 +134,7 @@ const chunks = getChunks(content, "\n");
 
 ## Debug Mode
 
-When `debug: true` is enabled, rwfs provides colored terminal output showing:
+When `debug: true` is enabled, `rwfs` provides colored terminal output showing:
 
 - Total number of chunks
 - The separator being used (with escape sequences visible)
