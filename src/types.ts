@@ -3,11 +3,21 @@ export type UpdateResult = string | { deleteChunk: true };
 
 export type UpdateRule = {
   constraint: (
-    chunks: { chunk: string; prevChunk?: string; nextChunk?: string },
+    chunks: {
+      chunk: string;
+      prevChunk?: string;
+      nextChunk?: string;
+      index: number;
+    },
     separator?: string
   ) => boolean;
   update: (
-    chunks: { chunk: string; prevChunk?: string; nextChunk?: string },
+    chunks: {
+      chunk: string;
+      prevChunk?: string;
+      nextChunk?: string;
+      index: number;
+    },
     separator?: string
   ) => UpdateResult;
 };

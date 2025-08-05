@@ -8,6 +8,5 @@ rwfs(testFile, {
   debug: true,
   debugOutputLimit: 2,
   constraint: () => true,
-  update: ({ chunk }) => chunk,
-  separator: " ",
+  update: ({ chunk, index }) => chunk,
 });
