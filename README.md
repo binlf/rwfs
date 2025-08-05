@@ -1,6 +1,6 @@
 # rwfs 🔄
 
-A utility for rewriting file contents with flexible chunk-based operations.
+A utility for rewriting file contents synchronously with flexible chunk-based operations.
 
 ## Features
 
