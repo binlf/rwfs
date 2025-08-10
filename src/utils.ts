@@ -29,3 +29,15 @@ export const isObjectLiteral = (
   const proto = Object.getPrototypeOf(value);
   return proto === Object.prototype || proto === null;
 };
+
+/**
+ * Normalize a separator for display in logs.
+ * - Maps control characters to their visible escape sequences (e.g., \n, \r, \t).
+ * - Returns JSON stringified representation for other strings (to keep quotes and escapes visible).
+ */
+export const formatSeparator = (separator: string): string => {
+  if (separator === "\n") return "\\n";
+  if (separator === "\r") return "\\r";
+  if (separator === "\t") return "\\t";
+  return JSON.stringify(separator);
+};
