@@ -6,7 +6,7 @@ const testFile = path.join(process.cwd(), "file.txt");
 
 rwfs(testFile, {
   debug: true,
-  debugOutputLimit: 20,
+  debugOutputLimit: 5,
   constraint: () => true,
   update: ({ chunk, index }) => chunk,
 });

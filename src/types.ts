@@ -55,9 +55,9 @@ export type UpdateRule = {
  * Common options shared across single and multiple update modes.
  */
 type FileRewriteCommonOptions = {
-  /** File encoding used when reading and writing. Defaults to 'utf8'. */
-  separator?: string;
   /** String used to split content into chunks. Defaults to '\n'. */
+  separator?: string;
+  /** File encoding used when reading and writing. Defaults to 'utf8'. */
   encoding?: BufferEncoding;
   /** Remove falsy/empty chunks after processing. Defaults to false. */
   removeEmpty?: boolean;
