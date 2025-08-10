@@ -6,7 +6,7 @@ import type {
 } from "./types";
 import { bgWhiteBright, grayBold, whiteBold } from "./logger";
 import pc from "picocolors";
-import { isObjectLiteral, replaceAll } from "./utils";
+import { isObjectLiteral, replaceAll, formatSeparator } from "./utils";
 
 // todo: path input should also accept an array of paths
 export function reWriteFileSync(
@@ -37,14 +37,7 @@ export function reWriteFileSync(
       pc.bold(pc.whiteBright(chunks.length))
     );
     // Show separator as a visible escape sequence if it's a control character
-    const visibleSeparator =
-      separator === "\n"
-        ? "\\n"
-        : separator === "\r"
-        ? "\\r"
-        : separator === "\t"
-        ? "\\t"
-        : JSON.stringify(separator);
+    const visibleSeparator = formatSeparator(separator);
     console.log(
       pc.gray("Separator: "),
       pc.bold(`${pc.redBright(visibleSeparator)}`)
@@ -119,9 +112,9 @@ export function reWriteFileSync(
           whiteBold(header) +
           "\n\n" +
           replaceAll(JSON.stringify(chunk), {
-            "\\n": pc.redBright("\\n"),
+            "\\n": pc.greenBright("\\n"),
             "\\r": pc.greenBright("\\r"),
-            [separator]: pc.redBright(separator),
+            [visibleSeparator]: pc.redBright(visibleSeparator),
           }) +
           "\n\n" +
           grayBold(footer) +

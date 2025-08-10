@@ -6,17 +6,18 @@ const testFile = path.join(process.cwd(), "file.txt");
 
 rwfs(testFile, {
   debug: true,
-  debugOutputLimit: 20,
+  debugOutputLimit: 5,
   constraint: () => true,
   update: ({ chunk, index }) => chunk,
 });
 
-// rwfs(testFile, {
-//   debug: true,
-//   debugOutputLimit: { start: 2, end: 4 },
-//   constraint: () => true,
-//   update: ({ chunk }) => chunk,
-// });
+rwfs(testFile, {
+  debug: true,
+  debugOutputLimit: { start: 2, end: 4 },
+  constraint: () => true,
+  update: ({ chunk }) => chunk,
+  separator: " ",
+});
 
 // // object range form
 // rwfs(testFile, {
