@@ -2,7 +2,7 @@
   "name": "rwfs",
   "type": "module",
   "module": "./dist/index.js",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "🔄Re:WriteFileSync",
   "keywords": [
     "file",
@@ -13,7 +13,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/binlf/rwfs"
+    "url": "git+https://github.com/binlf/rwfs.git"
   },
   "author": "binlf <0xbin>",
   "license": "MIT",
@@ -28,7 +28,8 @@
     "picocolors": "^1.1.1"
   },
   "scripts": {
-    "build": "tsdown"
+    "build": "tsdown",
+    "prepublish": "bun run build"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
