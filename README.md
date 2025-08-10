@@ -4,13 +4,13 @@ A utility for rewriting file contents synchronously with flexible chunk-based op
 
 ## Features
 
-- Chunk-based file content manipulation with context awareness
-- Support for single or multiple update operations
-- Debug mode with colored output and configurable limits
-- Configurable separators and encoding
-- Access to previous and next chunks for contextual operations
-- Chunk deletion support
-- TypeScript support with full type safety
+- ✅ Chunk-based file content manipulation with context awareness
+- ✅ Support for single or multiple update operations
+- ✅ Debug mode with colored output and configurable limits
+- ✅ Configurable separators and encoding
+- ✅ Access to previous and next chunks for contextual operations
+- ✅ Chunk deletion support
+- ✅ TypeScript support with full type safety
 
 ## Installation
 
