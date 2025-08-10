@@ -83,7 +83,7 @@ rwfs("path/to/file.txt", {
 
 ## Context Object
 
-The constraint and update functions receive a context object with the following properties:
+The `constraint` and `update` functions receive a context object with the following properties:
 
 | Property    | Type      | Description                       |
 | ----------- | --------- | --------------------------------- |
