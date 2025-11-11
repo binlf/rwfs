@@ -6,11 +6,13 @@ A utility for rewriting file contents synchronously with flexible chunk-based op
 
 - ✅ Chunk-based file content manipulation with context awareness
 - ✅ Support for single or multiple update operations
-- ✅ Debug mode with colored output and configurable limits
+- ✅ Debug mode with colored output and configurable limits (numeric or range-based)
 - ✅ Configurable separators and encoding
 - ✅ Access to previous and next chunks for contextual operations
+- ✅ Reverse processing mode (process chunks from end to beginning)
 - ✅ Chunk deletion support
-- ✅ TypeScript support with full type safety
+- ✅ Early exit with `bailOnFirstMatch` optimization
+- ✅ TypeScript support with full type safety and comprehensive JSDoc comments
 
 ## Installation
 
@@ -79,6 +81,24 @@ rwfs("path/to/file.txt", {
   debug: true,
   debugOutputLimit: { start: 10, end: 12 }, // Show chunks 10 through 12 (1-based, inclusive)
 });
+
+// Process chunks in reverse order (output restored to original order)
+rwfs("path/to/file.txt", {
+  invert: true, // Process from end to beginning
+  constraint: ({ chunk, index }) => {
+    // index 0 is now the last chunk
+    return chunk.includes("footer");
+  },
+  update: ({ chunk }) => chunk.toUpperCase(),
+});
+
+// Process in reverse and keep reversed output
+rwfs("path/to/file.txt", {
+  invert: true,
+  preserveInvertedOrder: true, // Keep the file reversed after processing
+  constraint: () => true,
+  update: ({ chunk }) => chunk,
+});
 ```
 
 ## Context Object
@@ -94,14 +114,16 @@ The `constraint` and `update` functions receive a context object with the follow
 
 ## Options
 
-| Option             | Description                                                                                                       | Default |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------- | ------- |
-| `encoding`         | File encoding                                                                                                     | 'utf8'  |
-| `separator`        | Chunk separator                                                                                                   | '\n'    |
-| `removeEmpty`      | Remove empty chunks after processing                                                                              | false   |
-| `debug`            | Enable debug mode with colored output                                                                             | false   |
-| `debugOutputLimit` | Limit chunks shown in debug mode. Number = first N; or object `{ start, end }` to show a 1-based, inclusive range | 10      |
-| `bailOnFirstMatch` | Stop after first match (single update mode only)                                                                  | false   |
+| Option                  | Type                       | Description                                                                                              | Default  |
+| ----------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------- | -------- |
+| `separator`             | `string`                   | String used to split file content into chunks                                                            | `'\n'`   |
+| `encoding`              | `BufferEncoding`           | Character encoding used when reading and writing the file                                                | `'utf8'` |
+| `removeEmpty`           | `boolean`                  | Remove empty or falsy chunks from the final output after processing                                      | `false`  |
+| `debug`                 | `boolean`                  | Enable debug mode with detailed, color-coded chunk information                                           | `false`  |
+| `debugOutputLimit`      | `number \| { start, end }` | Limit chunks shown in debug mode. Number = first N chunks; object = 1-based inclusive range              | `10`     |
+| `invert`                | `boolean`                  | Process chunks in reverse order (last to first). By default, output is restored to original order        | `false`  |
+| `preserveInvertedOrder` | `boolean`                  | When used with `invert`, preserve the reversed order in the output. Only applies when `invert` is `true` | `false`  |
+| `bailOnFirstMatch`      | `boolean`                  | Stop processing after the first match (single-rule mode only)                                            | `false`  |
 
 ## Update Result
 
@@ -190,6 +212,26 @@ rwfs("file.txt", {
 });
 ```
 
+### Process File in Reverse
+
+```typescript
+// Process last-to-first, output restored to original order
+rwfs("log.txt", {
+  invert: true,
+  bailOnFirstMatch: true, // Stop after finding the first (last) match
+  constraint: ({ chunk }) => chunk.startsWith("[ERROR]"),
+  update: ({ chunk }) => chunk.replace("[ERROR]", "[ERROR-RESOLVED]"),
+});
+
+// Reverse the entire file (flip line order)
+rwfs("file.txt", {
+  invert: true,
+  preserveInvertedOrder: true, // Keep reversed order
+  constraint: () => true,
+  update: ({ chunk }) => chunk,
+});
+```
+
 ### Context-Aware Processing
 
 ```typescript
@@ -208,6 +250,54 @@ rwfs("markdown.md", {
         prevChunk?.startsWith("#") &&
         nextChunk?.startsWith("#"),
       update: () => ({ deleteChunk: true }),
+    },
+  ],
+});
+```
+
+### Debug with Specific Range
+
+```typescript
+// Inspect only chunks 50-60 in a large file
+rwfs("large-file.txt", {
+  debug: true,
+  debugOutputLimit: { start: 50, end: 60 },
+  constraint: ({ chunk }) => chunk.includes("keyword"),
+  update: ({ chunk }) => chunk.toUpperCase(),
+});
+```
+
+### Conditional Deletion
+
+```typescript
+// Remove all empty lines and lines with only whitespace
+rwfs("source.txt", {
+  constraint: ({ chunk }) => chunk.trim().length === 0,
+  update: () => ({ deleteChunk: true }),
+  removeEmpty: true,
+});
+```
+
+### Multi-Rule Transformation
+
+```typescript
+rwfs("data.csv", {
+  separator: ",",
+  updates: [
+    // Trim whitespace from all chunks
+    {
+      constraint: () => true,
+      update: ({ chunk }) => chunk.trim(),
+    },
+    // Replace empty values with "N/A"
+    {
+      constraint: ({ chunk }) => chunk === "",
+      update: () => "N/A",
+    },
+    // Uppercase specific columns (assuming first chunk is header)
+    {
+      constraint: ({ index }) => index > 0,
+      update: ({ chunk }) => chunk.toUpperCase(),
     },
   ],
 });

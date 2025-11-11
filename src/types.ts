@@ -152,13 +152,30 @@ type FileRewriteCommonOptions = {
 
   /**
    * Process chunks in reverse order (from last to first).
-   * When enabled, the file is split into chunks and then reversed before processing,
-   * but the final output is written back in the correct order.
+   * When enabled, chunks are reversed before processing, allowing you to work
+   * from the end of the file towards the beginning. By default, the output is
+   * restored to the original order unless `preserveInvertedOrder` is true.
    * @default false
    * @example
    * invert: true // Process from end of file to beginning
    */
   invert?: boolean;
+
+  /**
+   * When used with `invert`, preserve the reversed order in the final output.
+   * If `false` (default), chunks are un-reversed before writing back to the file.
+   * If `true`, the reversed order is maintained in the output.
+   * This option has no effect unless `invert` is `true`.
+   * @default false
+   * @example
+   * // Process in reverse but restore original order (default)
+   * invert: true, preserveInvertedOrder: false
+   *
+   * @example
+   * // Process in reverse and keep reversed output
+   * invert: true, preserveInvertedOrder: true
+   */
+  preserveInvertedOrder?: boolean;
 
   /**
    * Control which chunks are displayed when debug mode is enabled.

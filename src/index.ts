@@ -24,6 +24,8 @@ export function reWriteFileSync(
     false;
   const shouldInvertChunks = options.invert || false;
 
+  const shouldPreserveInvertedOrder = options.preserveInvertedOrder || false;
+
   const fileContent = readFileSync(path, { encoding });
   const chunks = shouldInvertChunks
     ? fileContent.split(separator).reverse()
@@ -180,11 +182,17 @@ export function reWriteFileSync(
     updatedChunks = chunks;
   }
 
-  const finalChunks = (
+  let finalChunks = (
     removeEmpty
       ? updatedChunks.filter((chunk) => Boolean(chunk))
       : updatedChunks
   ).filter((chunk) => typeof chunk !== "object");
+
+  // If chunks were inverted for processing but we don't want to preserve the inverted order,
+  // reverse them back to original order before writing
+  if (shouldInvertChunks && !shouldPreserveInvertedOrder) {
+    finalChunks = finalChunks.reverse();
+  }
 
   writeFileSync(path, finalChunks.join(separator), encoding);
   // rwfs is matching more than one chunk for the rewrite

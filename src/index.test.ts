@@ -27,7 +27,7 @@ describe("rwfs", () => {
   });
 
   describe("invert option", () => {
-    it("should process chunks in reverse order when invert is true", () => {
+    it("should process chunks in reverse order and restore original order by default", () => {
       // Create a test file with numbered lines
       const content = "line1\nline2\nline3\nline4";
       writeFileSync(tempFile, content, "utf8");
@@ -42,30 +42,95 @@ describe("rwfs", () => {
           processedChunks.push(chunk);
           return chunk;
         },
-        debug: true,
       });
 
+      // Chunks are processed in reverse order
       expect(processedChunks).toEqual(["line4", "line3", "line2", "line1"]);
-      // Verify the file content is correctly reconstructed
+
+      // But the output is restored to original order
       const result = readFileSync(tempFile, "utf8");
-      expect(result).toBe(processedChunks.join("\n"));
+      expect(result).toBe(content);
     });
 
-    it("should correctly update chunks when processing in reverse order", () => {
+    it("should preserve inverted order when preserveInvertedOrder is true", () => {
+      const content = "line1\nline2\nline3\nline4";
+      writeFileSync(tempFile, content, "utf8");
+
+      const processedChunks: string[] = [];
+
+      rwfs(tempFile, {
+        invert: true,
+        preserveInvertedOrder: true,
+        constraint: () => true,
+        update: ({ chunk }) => {
+          processedChunks.push(chunk);
+          return chunk;
+        },
+      });
+
+      // Chunks are processed in reverse order
+      expect(processedChunks).toEqual(["line4", "line3", "line2", "line1"]);
+
+      // And the output maintains the reversed order
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line4\nline3\nline2\nline1");
+    });
+
+    it("should correctly update chunks when processing in reverse order with default behavior", () => {
       // Create a test file with specific content
       const content = "first\nsecond\nthird";
       writeFileSync(tempFile, content, "utf8");
 
-      // Add a prefix based on the chunk content
+      // Modify the last chunk (which is processed first due to invert)
       rwfs(tempFile, {
         invert: true,
         constraint: ({ chunk }) => chunk === "third",
         update: ({ chunk }) => `MODIFIED-${chunk}`,
-        debug: true,
       });
 
       const result = readFileSync(tempFile, "utf8");
+      // Output is restored to original order with modification applied
+      expect(result).toBe("first\nsecond\nMODIFIED-third");
+    });
+
+    it("should update and preserve inverted order when preserveInvertedOrder is true", () => {
+      const content = "first\nsecond\nthird";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        invert: true,
+        preserveInvertedOrder: true,
+        constraint: ({ chunk }) => chunk === "third",
+        update: ({ chunk }) => `MODIFIED-${chunk}`,
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      // Output maintains reversed order with modification
       expect(result).toBe("MODIFIED-third\nsecond\nfirst");
+    });
+
+    it("should work with bailOnFirstMatch in inverted mode", () => {
+      const content = "line1\nline2\nline3\nline4";
+      writeFileSync(tempFile, content, "utf8");
+
+      let matchCount = 0;
+
+      rwfs(tempFile, {
+        invert: true,
+        bailOnFirstMatch: true,
+        constraint: ({ chunk }) => chunk.startsWith("line"),
+        update: ({ chunk }) => {
+          matchCount++;
+          return chunk.toUpperCase();
+        },
+      });
+
+      // Should only match once (line4, the first chunk in reversed order)
+      expect(matchCount).toBe(1);
+
+      const result = readFileSync(tempFile, "utf8");
+      // Output restored to original order, only last line modified
+      expect(result).toBe("line1\nline2\nline3\nLINE4");
     });
   });
 });
