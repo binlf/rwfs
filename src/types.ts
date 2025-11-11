@@ -28,6 +28,7 @@ type FileRewriteCommonOptions = {
   removeEmpty?: boolean;
   debug?: boolean;
   debugOutputLimit?: number;
+  invert?: boolean;
 };
 
 export type ReWriteFileSyncOptionsSingle = {

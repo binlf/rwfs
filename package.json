@@ -19,7 +19,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",
-    "tsdown": "^0.13.3"
+    "tsdown": "^0.13.3",
+    "vitest": "^4.0.8"
   },
   "peerDependencies": {
     "typescript": "^5"
@@ -28,7 +29,8 @@
     "picocolors": "^1.1.1"
   },
   "scripts": {
-    "build": "tsdown"
+    "build": "tsdown",
+    "test": "vitest"
   },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

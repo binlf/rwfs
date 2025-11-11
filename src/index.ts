@@ -9,16 +9,21 @@ export function reWriteFileSync(
   path: string,
   options: ReWriteFileSyncOptions
 ): void {
+  // options
   const encoding: BufferEncoding = options.encoding || "utf8";
   const separator: string = options.separator || "\n";
   const removeEmpty = options.removeEmpty || false;
   const debugOutputLimit = options.debugOutputLimit || 10;
-  const fileContent = readFileSync(path, { encoding });
-  const chunks = fileContent.split(separator);
   const shouldPrintChunks = options.debug;
   const shouldBailOnFirstMatch =
     ("bailOnFirstMatch" in options && options.bailOnFirstMatch === true) ||
     false;
+  const shouldInvertChunks = options.invert || false;
+
+  const fileContent = readFileSync(path, { encoding });
+  const chunks = shouldInvertChunks
+    ? fileContent.split(separator).reverse()
+    : fileContent.split(separator);
 
   // DEBUG MODE
   // Debug output limit: clamp/truncate debug-mode output to prevent overwhelming the terminal UI
