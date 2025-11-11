@@ -1,8 +1,12 @@
 import { readFileSync, writeFileSync } from "node:fs";
-import type { ReWriteFileSyncOptions, UpdateResult } from "./types";
+import type {
+  ChunkContext,
+  ReWriteFileSyncOptions,
+  UpdateResult,
+} from "./types";
 import { bgWhiteBright, grayBold, whiteBold } from "./logger";
 import pc from "picocolors";
-import { replaceAll } from "./utils";
+import { isObjectLiteral, replaceAll, formatSeparator } from "./utils";
 
 // todo: path input should also accept an array of paths
 export function reWriteFileSync(
@@ -29,6 +33,7 @@ export function reWriteFileSync(
   // Debug output limit: clamp/truncate debug-mode output to prevent overwhelming the terminal UI
   // Default limit is 10 chunks, but users can specify a custom number value
   if (shouldPrintChunks) {
+    const chunks = getChunks(fileContent, separator);
     console.log(
       bgWhiteBright(pc.blackBright("------ RWFS: DEBUG MODE ------"))
     );
@@ -37,37 +42,74 @@ export function reWriteFileSync(
       pc.bold(pc.whiteBright(chunks.length))
     );
     // Show separator as a visible escape sequence if it's a control character
-    const visibleSeparator =
-      separator === "\n"
-        ? "\\n"
-        : separator === "\r"
-        ? "\\r"
-        : separator === "\t"
-        ? "\\t"
-        : JSON.stringify(separator);
+    const visibleSeparator = formatSeparator(separator);
     console.log(
       pc.gray("Separator: "),
-      pc.bold(`${pc.redBright(visibleSeparator)}(Omitted in output)`)
+      pc.bold(`${pc.redBright(visibleSeparator)}`)
     );
 
     const totalChunks = chunks.length;
-    const shouldClamp = totalChunks > debugOutputLimit;
-    const chunksToShow = shouldClamp
-      ? chunks.slice(0, debugOutputLimit)
-      : chunks;
+    // Determine selection strategy: numeric limit or range
+    let startIndex = 0;
+    let endIndex = totalChunks - 1; // inclusive
+    if (
+      isObjectLiteral(debugOutputLimit) &&
+      "start" in debugOutputLimit &&
+      "end" in debugOutputLimit
+    ) {
+      // handle out-of-bounds value; `value < 0`(negative)
+      startIndex = Math.max(
+        0,
+        // handle out-of-bounds; `value > 0`(positive)
+        Math.min(totalChunks - 1, debugOutputLimit.start - 1)
+      );
+      endIndex = Math.max(
+        0,
+        Math.min(totalChunks - 1, debugOutputLimit.end - 1)
+      );
+    } else if (typeof debugOutputLimit === "number") {
+      endIndex = Math.min(totalChunks - 1, Math.max(0, debugOutputLimit - 1));
+      startIndex = 0;
+    }
 
-    if (shouldClamp) {
+    if (endIndex < startIndex) {
+      // swap if provided in reverse
+      const tmp = startIndex;
+      startIndex = endIndex;
+      endIndex = tmp;
+    }
+
+    const visibleCount = endIndex - startIndex + 1;
+    const chunksToShow = chunks.slice(startIndex, endIndex + 1);
+    const isNumericLimit = typeof debugOutputLimit === "number";
+    const shouldDisplayAllChunks =
+      startIndex === 0 && endIndex === totalChunks - 1;
+    const shouldClamp = isNumericLimit
+      ? totalChunks > (debugOutputLimit as number)
+      : // clamp for every use case except when they explicity want to view everything
+        !shouldDisplayAllChunks;
+
+    if (isNumericLimit && shouldClamp) {
       console.log(
         pc.yellow(
-          `⚠️  Output limited to first ${debugOutputLimit} chunks (${
-            totalChunks - debugOutputLimit
+          `⚠️  Output limited to first ${debugOutputLimit as number} chunks (${
+            totalChunks - (debugOutputLimit as number)
           } more chunks not shown)`
+        )
+      );
+    } else {
+      console.log(
+        pc.yellow(
+          `📍 Showing chunks ${startIndex + 1}-${
+            endIndex + 1
+          } of ${totalChunks} (${visibleCount} shown)`
         )
       );
     }
 
     chunksToShow.forEach((chunk, index) => {
-      const chunkNumber = index + 1;
+      const absoluteIndex = startIndex + index; // zero-based absolute index
+      const chunkNumber = absoluteIndex + 1; // human-friendly 1-based
       const header = `--- Chunk ${chunkNumber} ---`;
       const footer = `--- End Chunk ${chunkNumber} ---`;
       console.log(
@@ -77,7 +119,7 @@ export function reWriteFileSync(
           replaceAll(JSON.stringify(chunk), {
             "\\n": pc.greenBright("\\n"),
             "\\r": pc.greenBright("\\r"),
-            [separator]: pc.redBright(separator),
+            [visibleSeparator]: pc.redBright(visibleSeparator),
           }) +
           "\n\n" +
           grayBold(footer) +
@@ -85,22 +127,19 @@ export function reWriteFileSync(
       );
     });
 
-    if (shouldClamp) {
-      console.log(
-        pc.yellow(`... and ${totalChunks - debugOutputLimit} more chunks`)
-      );
+    if (isNumericLimit) {
+      if (shouldClamp) {
+        console.log(
+          pc.yellow(
+            `... and ${totalChunks - (debugOutputLimit as number)} more chunks`
+          )
+        );
+      }
     }
   }
 
   // create context for each chunk
-  const createContext = (
-    idx: number
-  ): {
-    chunk: string;
-    prevChunk?: string;
-    nextChunk?: string;
-    index: number;
-  } => ({
+  const createContext = (idx: number): ChunkContext => ({
     chunk: chunks[idx] as string,
     index: idx,
     prevChunk: idx > 0 ? chunks[idx - 1] : undefined,

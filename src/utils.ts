@@ -21,3 +21,23 @@ export const replaceAll = (
   });
   return newString;
 };
+
+export const isObjectLiteral = (
+  value: unknown
+): value is Record<string, unknown> => {
+  if (value === null || typeof value !== "object") return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
+};
+
+/**
+ * Normalize a separator for display in logs.
+ * - Maps control characters to their visible escape sequences (e.g., \n, \r, \t).
+ * - Returns JSON stringified representation for other strings (to keep quotes and escapes visible).
+ */
+export const formatSeparator = (separator: string): string => {
+  if (separator === "\n") return "\\n";
+  if (separator === "\r") return "\\r";
+  if (separator === "\t") return "\\t";
+  return JSON.stringify(separator);
+};

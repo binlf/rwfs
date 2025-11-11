@@ -69,3 +69,26 @@ describe("rwfs", () => {
     });
   });
 });
+
+rwfs(testFile, {
+  debug: true,
+  debugOutputLimit: { start: 2, end: 4 },
+  constraint: () => true,
+  update: ({ chunk }) => chunk,
+  separator: " ",
+});
+
+// // object range form
+// rwfs(testFile, {
+//   debug: true,
+//   debugOutputLimit: { start: 1, end: 1 },
+//   constraint: () => true,
+//   update: ({ chunk }) => chunk,
+// });
+
+// rwfs(testFile, {
+//   debug: true,
+//   debugOutputLimit: { start: 2, end: 10 },
+//   constraint: () => true,
+//   update: ({ chunk }) => chunk,
+// });
