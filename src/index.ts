@@ -182,20 +182,19 @@ export function reWriteFileSync(
     const originalChunk = chunks[i] as string;
 
     if (typeof result === "string") {
-      // Simple replacement
       processedChunks.push(result);
     } else if (result && typeof result === "object") {
       if ("deleteChunk" in result && result.deleteChunk === true) {
         // Skip this chunk (deletion)
         continue;
       } else if ("insertBefore" in result) {
-        // Insert new content before, then keep original chunk
+        if (shouldInvertChunks) processedChunks.push(originalChunk);
         processedChunks.push(result.insertBefore);
-        processedChunks.push(originalChunk);
+        if (!shouldInvertChunks) processedChunks.push(originalChunk);
       } else if ("insertAfter" in result) {
-        // Keep original chunk, then insert new content after
+        if (shouldInvertChunks) processedChunks.push(result.insertAfter);
         processedChunks.push(originalChunk);
-        processedChunks.push(result.insertAfter);
+        if (!shouldInvertChunks) processedChunks.push(result.insertAfter);
       }
     }
   }
@@ -204,8 +203,6 @@ export function reWriteFileSync(
     ? processedChunks.filter((chunk) => Boolean(chunk))
     : processedChunks;
 
-  // If chunks were inverted for processing but we don't want to preserve the inverted order,
-  // reverse them back to original order before writing
   if (shouldInvertChunks && !shouldPreserveInvertedOrder) {
     finalChunks = finalChunks.reverse();
   }
