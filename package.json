@@ -2,14 +2,15 @@
   "name": "rwfs",
   "type": "module",
   "module": "./dist/index.js",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "🔄Re:WriteFileSync",
   "keywords": [
     "file",
     "fs",
     "file-system",
     "write",
-    "rewrite"
+    "rewrite",
+    "synchronous"
   ],
   "repository": {
     "type": "git",
