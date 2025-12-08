@@ -23,7 +23,6 @@ export function reWriteFileSync(
     ("bailOnFirstMatch" in options && options.bailOnFirstMatch === true) ||
     false;
   const shouldInvertChunks = options.invert || false;
-
   const shouldPreserveInvertedOrder = options.preserveInvertedOrder || false;
 
   const fileContent = readFileSync(path, { encoding });
@@ -32,8 +31,6 @@ export function reWriteFileSync(
     : fileContent.split(separator);
 
   // DEBUG MODE
-  // Debug output limit: clamp/truncate debug-mode output to prevent overwhelming the terminal UI
-  // Default limit is 10 chunks, but users can specify a custom number value
   if (shouldPrintChunks) {
     const chunks = getChunks(fileContent, separator);
     console.log(
@@ -151,22 +148,18 @@ export function reWriteFileSync(
   let updatedChunks: UpdateResult[];
 
   if ("updates" in options && Array.isArray(options.updates)) {
-    // Overload with multiple update functions.
     updatedChunks = chunks.map((_, idx) => {
       const context = createContext(idx);
       let newChunk: UpdateResult = context.chunk;
+      // todo: `newChunk` can be updated multiple times if multiple constraints match, should probably break the for loop as soon as one matches
       for (const { constraint, update } of options.updates) {
-        if (
-          typeof constraint === "function" &&
-          constraint(context, separator)
-        ) {
+        if (constraint(context, separator)) {
           newChunk = update(context, separator);
         }
       }
       return newChunk;
     });
   } else if ("constraint" in options && "update" in options) {
-    // Overload with a single constraint/update pair.
     let bailed = false;
     updatedChunks = chunks.map((_, idx) => {
       const context = createContext(idx);
@@ -182,11 +175,34 @@ export function reWriteFileSync(
     updatedChunks = chunks;
   }
 
-  let finalChunks = (
-    removeEmpty
-      ? updatedChunks.filter((chunk) => Boolean(chunk))
-      : updatedChunks
-  ).filter((chunk) => typeof chunk !== "object");
+  // Process insertion signals and build final chunks array
+  let processedChunks: string[] = [];
+  for (let i = 0; i < updatedChunks.length; i++) {
+    const result = updatedChunks[i];
+    const originalChunk = chunks[i] as string;
+
+    if (typeof result === "string") {
+      // Simple replacement
+      processedChunks.push(result);
+    } else if (result && typeof result === "object") {
+      if ("deleteChunk" in result && result.deleteChunk === true) {
+        // Skip this chunk (deletion)
+        continue;
+      } else if ("insertBefore" in result) {
+        // Insert new content before, then keep original chunk
+        processedChunks.push(result.insertBefore);
+        processedChunks.push(originalChunk);
+      } else if ("insertAfter" in result) {
+        // Keep original chunk, then insert new content after
+        processedChunks.push(originalChunk);
+        processedChunks.push(result.insertAfter);
+      }
+    }
+  }
+
+  let finalChunks = removeEmpty
+    ? processedChunks.filter((chunk) => Boolean(chunk))
+    : processedChunks;
 
   // If chunks were inverted for processing but we don't want to preserve the inverted order,
   // reverse them back to original order before writing

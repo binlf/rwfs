@@ -3,6 +3,8 @@
  *
  * - **string**: Replace the chunk with this new content
  * - **{ deleteChunk: true }**: Remove the chunk entirely from the output
+ * - **{ insertBefore: string }**: Insert content before the current chunk (chunk is preserved)
+ * - **{ insertAfter: string }**: Insert content after the current chunk (chunk is preserved)
  *
  * @example
  * // Replace chunk content
@@ -11,8 +13,20 @@
  * @example
  * // Delete the chunk
  * return { deleteChunk: true };
+ *
+ * @example
+ * // Insert content before this chunk (splice)
+ * return { insertBefore: "new line above" };
+ *
+ * @example
+ * // Insert content after this chunk
+ * return { insertAfter: "new line below" };
  */
-export type UpdateResult = string | { deleteChunk: true };
+export type UpdateResult =
+  | string
+  | { deleteChunk: true }
+  | { insertBefore: string }
+  | { insertAfter: string };
 
 /**
  * A single rule that defines when and how to transform a chunk.
@@ -70,7 +84,12 @@ export type UpdateRule = {
 
   /**
    * Transformation function to apply when the constraint returns `true`.
-   * Return a string to replace the chunk's content, or `{ deleteChunk: true }` to remove it.
+   *
+   * Return values:
+   * - **string**: Replace the chunk with new content
+   * - **{ deleteChunk: true }**: Remove the chunk entirely
+   * - **{ insertBefore: string }**: Insert content before this chunk (chunk is preserved)
+   * - **{ insertAfter: string }**: Insert content after this chunk (chunk is preserved)
    *
    * @param context - Context object providing chunk information and position
    * @param context.chunk - The current chunk to transform
@@ -78,7 +97,7 @@ export type UpdateRule = {
    * @param context.nextChunk - The next chunk (undefined if this is the last chunk)
    * @param context.index - Zero-based position of this chunk in the file
    * @param separator - The separator string used to split the file (e.g., "\n")
-   * @returns New chunk content (string) or deletion signal ({ deleteChunk: true })
+   * @returns New chunk content, deletion signal, or insertion signal
    *
    * @example
    * // Simple replacement
@@ -92,6 +111,19 @@ export type UpdateRule = {
    * @example
    * // Delete the chunk
    * update: () => ({ deleteChunk: true })
+   *
+   * @example
+   * // Insert content before this chunk (splice)
+   * update: () => ({ insertBefore: "// New line above" })
+   *
+   * @example
+   * // Insert content after this chunk
+   * update: () => ({ insertAfter: "// New line below" })
+   *
+   * @example
+   * // Insert based on sibling content
+   * update: ({ prevChunk, chunk }) =>
+   *   prevChunk?.includes("HEADER") ? { insertBefore: "// After header" } : chunk
    */
   update: (
     context: {

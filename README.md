@@ -11,6 +11,7 @@ A utility for rewriting file contents synchronously with flexible chunk-based op
 - ✅ Access to previous and next chunks for contextual operations
 - ✅ Reverse processing mode (process chunks from end to beginning)
 - ✅ Chunk deletion support
+- ✅ Chunk insertion (splice) - insert content before or after chunks
 - ✅ Early exit with `bailOnFirstMatch` optimization
 - ✅ TypeScript support with full type safety and comprehensive JSDoc comments
 
@@ -127,10 +128,12 @@ The `constraint` and `update` functions receive a context object with the follow
 
 ## Update Result
 
-The `update` function can return either:
+The `update` function can return:
 
-- A `string` - The new content for the chunk
+- A `string` - The new content for the chunk (replacement)
 - An object `{ deleteChunk: true }` - To delete the chunk entirely
+- An object `{ insertBefore: string }` - To insert content before the chunk (splice)
+- An object `{ insertAfter: string }` - To insert content after the chunk
 
 ```typescript
 // Replace content
@@ -138,6 +141,20 @@ update: ({ chunk }) => chunk.replace("old", "new");
 
 // Delete chunk
 update: ({ chunk }) => ({ deleteChunk: true });
+
+// Insert content before this chunk (original chunk is preserved)
+update: () => ({ insertBefore: "// New line above" });
+
+// Insert content after this chunk (original chunk is preserved)
+update: () => ({ insertAfter: "// New line below" });
+
+// Conditional insertion based on sibling content
+update: ({ chunk, prevChunk }) => {
+  if (prevChunk?.includes("SECTION_START")) {
+    return { insertBefore: "// Inserted after section start" };
+  }
+  return chunk;
+};
 
 // Conditional deletion
 update: ({ chunk }) => {
@@ -232,6 +249,35 @@ rwfs("file.txt", {
 });
 ```
 
+### Insert Content (Splice)
+
+```typescript
+// Insert a header at the beginning of the file
+rwfs("file.txt", {
+  constraint: ({ index }) => index === 0,
+  update: () => ({ insertBefore: "// Auto-generated header" }),
+});
+
+// Insert content after a specific marker
+rwfs("config.json", {
+  constraint: ({ chunk }) => chunk.includes('"dependencies"'),
+  update: () => ({ insertAfter: '  "newDependency": "^1.0.0",' }),
+});
+
+// Insert based on sibling chunk content
+rwfs("source.ts", {
+  constraint: ({ prevChunk }) =>
+    prevChunk?.includes("// SECTION_START") ?? false,
+  update: () => ({ insertBefore: "// Injected after section start" }),
+});
+
+// Add footer before the last line
+rwfs("file.txt", {
+  constraint: ({ nextChunk }) => nextChunk === undefined,
+  update: () => ({ insertBefore: "// Footer" }),
+});
+```
+
 ### Context-Aware Processing
 
 ```typescript
@@ -282,7 +328,6 @@ rwfs("source.txt", {
 
 ```typescript
 rwfs("data.csv", {
-  separator: ",",
   updates: [
     // Trim whitespace from all chunks
     {

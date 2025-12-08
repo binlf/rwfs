@@ -133,6 +133,211 @@ describe("rwfs", () => {
       expect(result).toBe("line1\nline2\nline3\nLINE4");
     });
   });
+
+  describe("insertion (splice) operations", () => {
+    it("should insert content before a chunk using insertBefore", () => {
+      const content = "line1\nline2\nline3";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ chunk }) => chunk === "line2",
+        update: () => ({ insertBefore: "NEW_LINE" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\nNEW_LINE\nline2\nline3");
+    });
+
+    it("should insert content after a chunk using insertAfter", () => {
+      const content = "line1\nline2\nline3";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ chunk }) => chunk === "line2",
+        update: () => ({ insertAfter: "NEW_LINE" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\nline2\nNEW_LINE\nline3");
+    });
+
+    it("should insert before the first chunk", () => {
+      const content = "line1\nline2\nline3";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ index }) => index === 0,
+        update: () => ({ insertBefore: "HEADER" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("HEADER\nline1\nline2\nline3");
+    });
+
+    it("should insert after the last chunk", () => {
+      const content = "line1\nline2\nline3";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ nextChunk }) => nextChunk === undefined,
+        update: () => ({ insertAfter: "FOOTER" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\nline2\nline3\nFOOTER");
+    });
+
+    it("should insert based on sibling chunk content (prevChunk)", () => {
+      const content = "// SECTION_START\ncontent here\n// SECTION_END";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ prevChunk }) =>
+          prevChunk?.includes("SECTION_START") ?? false,
+        update: () => ({ insertBefore: "// Inserted after section start" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe(
+        "// SECTION_START\n// Inserted after section start\ncontent here\n// SECTION_END"
+      );
+    });
+
+    it("should insert based on sibling chunk content (nextChunk)", () => {
+      const content = "line1\nline2\n// END";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: ({ nextChunk }) => nextChunk?.includes("END") ?? false,
+        update: () => ({ insertAfter: "// Inserted before END" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\nline2\n// Inserted before END\n// END");
+    });
+
+    it("should handle multiple insertions in one pass", () => {
+      const content = "a\nb\nc";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        constraint: () => true,
+        update: ({ chunk }) => ({ insertAfter: `${chunk}-after` }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("a\na-after\nb\nb-after\nc\nc-after");
+    });
+
+    it("should work with multi-rule mode for insertions", () => {
+      const content = "start\nmiddle\nend";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        updates: [
+          {
+            constraint: ({ chunk }) => chunk === "start",
+            update: () => ({ insertAfter: "after-start" }),
+          },
+          {
+            constraint: ({ chunk }) => chunk === "end",
+            update: () => ({ insertBefore: "before-end" }),
+          },
+        ],
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("start\nafter-start\nmiddle\nbefore-end\nend");
+    });
+
+    it("should work with insertions and invert option", () => {
+      const content = "line1\nline2\nline3";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        invert: true,
+        constraint: ({ chunk }) => chunk === "line3",
+        update: () => ({ insertAfter: "INSERTED" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      // Processed in reverse (line3 first), then restored to original order
+      expect(result).toBe("line1\nline2\nline3\nINSERTED");
+    });
+
+    it("should work with bailOnFirstMatch and insertion", () => {
+      const content = "match\nmatch\nmatch";
+      writeFileSync(tempFile, content, "utf8");
+
+      let insertCount = 0;
+
+      rwfs(tempFile, {
+        bailOnFirstMatch: true,
+        constraint: ({ chunk }) => chunk === "match",
+        update: () => {
+          insertCount++;
+          return { insertBefore: "INSERTED" };
+        },
+      });
+
+      expect(insertCount).toBe(1);
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("INSERTED\nmatch\nmatch\nmatch");
+    });
+
+    it("should handle mixed operations (replace, delete, insert)", () => {
+      const content = "keep\ndelete_me\nreplace_me\ninsert_before_me";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        updates: [
+          {
+            constraint: ({ chunk }) => chunk === "delete_me",
+            update: () => ({ deleteChunk: true }),
+          },
+          {
+            constraint: ({ chunk }) => chunk === "replace_me",
+            update: () => "REPLACED",
+          },
+          {
+            constraint: ({ chunk }) => chunk === "insert_before_me",
+            update: () => ({ insertBefore: "INSERTED" }),
+          },
+        ],
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("keep\nREPLACED\nINSERTED\ninsert_before_me");
+    });
+
+    it("should preserve empty inserted content when removeEmpty is false", () => {
+      const content = "line1\nline2";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        removeEmpty: false,
+        constraint: ({ index }) => index === 0,
+        update: () => ({ insertAfter: "" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\n\nline2");
+    });
+
+    it("should remove empty inserted content when removeEmpty is true", () => {
+      const content = "line1\nline2";
+      writeFileSync(tempFile, content, "utf8");
+
+      rwfs(tempFile, {
+        removeEmpty: true,
+        constraint: ({ index }) => index === 0,
+        update: () => ({ insertAfter: "" }),
+      });
+
+      const result = readFileSync(tempFile, "utf8");
+      expect(result).toBe("line1\nline2");
+    });
+  });
 });
 
 // rwfs(testFile, {
