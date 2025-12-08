@@ -324,30 +324,6 @@ rwfs("source.txt", {
 });
 ```
 
-### Multi-Rule Transformation
-
-```typescript
-rwfs("data.csv", {
-  updates: [
-    // Trim whitespace from all chunks
-    {
-      constraint: () => true,
-      update: ({ chunk }) => chunk.trim(),
-    },
-    // Replace empty values with "N/A"
-    {
-      constraint: ({ chunk }) => chunk === "",
-      update: () => "N/A",
-    },
-    // Uppercase specific columns (assuming first chunk is header)
-    {
-      constraint: ({ index }) => index > 0,
-      update: ({ chunk }) => chunk.toUpperCase(),
-    },
-  ],
-});
-```
-
 </details>
 
 ## License
